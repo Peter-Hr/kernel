@@ -1,0 +1,116 @@
+# GitLab CI configuration
+#
+# Overall notes
+#  - Each milestone has its stage.
+#  - Optional parts of the milestone are marked with allow_failure so that
+#    the pipeline can continue (feel free to remove the allow_failure if you
+#    wish to pass the extra part).
+#  - Jobs inside a stage (one milestone) can have extra dependencies that
+#    skip advanced tests if base tests are failing (e.g. no need to test for
+#    %pF support in printk if base printk test failed).
+
+# Generic rules: do not re-run anything when adding a tag
+workflow:
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - when: always
+
+# Default configuration for individual jobs
+default:
+  image: registry.gitlab.com/mffd3s/nswi200/riscv32:latest
+  interruptible: true
+
+# Jobs in the same stage run in parallel, whole stage must pass before
+# next stage is started.
+stages:
+  - Style
+  - M01
+  - M02
+
+# Check C style of the code
+check-cstyle:
+  stage: Style
+  script:
+    - make check-cstyle
+
+# M01: base-m01 (Internal tests (required))
+base-m01:
+  stage: M01
+  needs: []
+  allow_failure: false
+  script:
+    - ./tools/ci.sh suites/m01-base.txt
+
+# M01: printk-base (Base printk tests (required))
+printk-base:
+  stage: M01
+  needs: [base-m01]
+  allow_failure: false
+  script:
+    - ./tools/ci.sh suites/m01-printk-base.txt
+
+# M01: printk-list (printk extension %pL for lists (optional))
+printk-list:
+  stage: M01
+  needs: [printk-base]
+  allow_failure: false
+  script:
+    - ./tools/ci.sh suites/m01-printk-list.txt
+
+# M01: printk-func (printk extension %pF for function (optional))
+printk-func:
+  stage: M01
+  needs: [printk-base]
+  allow_failure: false
+  script:
+    - ./tools/ci.sh suites/m01-printk-func.txt
+
+# M01: function-dump (debug_dump_function implementation (optional))
+function-dump:
+  stage: M01
+  needs: [printk-base]
+  allow_failure: false
+  script:
+    - ./tools/ci.sh suites/m01-function-dump.txt
+
+# M01: stackpointer (debug_get_stack_pointer implementation (optional))
+stackpointer:
+  stage: M01
+  needs: [printk-base]
+  allow_failure: false
+  script:
+    - ./tools/ci.sh suites/m01-stackpointer.txt
+
+# M02: base-m02 (Internal tests (required))
+base-m02:
+  stage: M02
+  needs: []
+  allow_failure: false
+  script:
+    - ./tools/ci.sh suites/m02-base.txt
+
+# M02: heap-base (Base heap tests (required))
+heap-base:
+  stage: M02
+  needs: []
+  allow_failure: false
+  script:
+    - ./tools/ci.sh suites/m02-heap-base.txt
+
+# M02: heap-free (kfree heap tests (optional, 4 points))
+heap-free:
+  stage: M02
+  needs: [heap-base]
+  allow_failure: false
+  script:
+    - ./tools/ci.sh suites/m02-heap-free.txt
+
+# M02: heap-coalesce (kfree with coalescing heap tests (optional, 7 points))
+heap-coalesce:
+  stage: M02
+  needs: [heap-base]
+  allow_failure: false
+  script:
+    - ./tools/ci.sh suites/m02-heap-coalesce.txt
+

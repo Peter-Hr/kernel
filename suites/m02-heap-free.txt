@@ -1,0 +1,5 @@
+# kfree heap tests (optional, 4 points)
+kernel heap/recycle_lifo:m256
+kernel heap/recycle_lifo:m3760
+kernel heap/recycle_fifo:m288
+kernel heap/recycle_fifo:m4064

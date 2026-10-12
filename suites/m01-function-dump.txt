@@ -1,0 +1,2 @@
+# debug_dump_function implementation (optional)
+kernel basic/dump_function

@@ -1,0 +1,2 @@
+# printk extension %pL for lists (optional)
+kernel printk/list

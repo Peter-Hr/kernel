@@ -1,0 +1,3 @@
+# Internal tests (required)
+kernel adt/list1
+kernel adt/list2

@@ -1,0 +1,17 @@
+# Base heap tests (required)
+kernel heap/basic
+kernel heap/exhaust:m256
+kernel heap/exhaust:m3760
+kernel heap/exhaust:m43008
+kernel heap/overhead:m128
+kernel heap/overhead:m296
+kernel heap/overhead:m672
+kernel heap/overhead:m1344
+kernel heap/overhead:m2208
+kernel heap/overhead:m4352
+kernel heap/overhead:m8192
+kernel heap/distinct:m128
+kernel heap/distinct:m244
+kernel heap/stress:m256
+kernel heap/stress:m992
+kernel heap/stress:m3968

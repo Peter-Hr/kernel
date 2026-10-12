@@ -1,0 +1,2 @@
+# debug_get_stack_pointer implementation (optional)
+kernel basic/stack_pointer

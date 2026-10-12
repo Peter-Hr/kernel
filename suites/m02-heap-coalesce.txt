@@ -1,0 +1,6 @@
+# kfree with coalescing heap tests (optional, 7 points)
+kernel heap/coalesce1:m240
+kernel heap/coalesce1:m4080
+kernel heap/coalesce2:m272
+kernel heap/coalesce2:m4032
+kernel heap/coalesce2:m8192

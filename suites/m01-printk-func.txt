@@ -1,0 +1,2 @@
+# printk extension %pF for function (optional)
+kernel printk/funcpointer

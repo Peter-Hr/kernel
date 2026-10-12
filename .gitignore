@@ -1,0 +1,9 @@
+target/
+config.mk
+compile_commands.json
+*.bin
+*.dep
+*.disasm
+*.map
+*.o
+*.raw

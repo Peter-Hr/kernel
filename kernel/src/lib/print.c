@@ -8,6 +8,15 @@
 #include <lib/stdarg.h>
 #include <types.h>
 
+static void handleStr(const char* str) {
+    if (str != NULL) {
+        for (size_t i = 0; str[i] != '\0'; i++)
+            printer_putchar(str[i]);
+    } else {
+        handleStr("(null)");
+    }
+}
+
 static void handleHex(unsigned long number, bool uppercase) {
     char digits[sizeof(unsigned long) * 2];
     char c;
@@ -91,15 +100,6 @@ static void handleHexByte(uint32_t number) {
         } else {
             printer_putchar('a' + digit - 10);
         }
-    }
-}
-
-static void handleStr(const char* str) {
-    if (str != NULL) {
-        for (size_t i = 0; str[i] != '\0'; i++)
-            printer_putchar(str[i]);
-    } else {
-        handleStr("(null)");
     }
 }
 

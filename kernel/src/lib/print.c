@@ -42,14 +42,9 @@ static void handleHex(unsigned long number, bool uppercase) {
 
 static void handlePointer(const void* pointer) {
     if (pointer == NULL) {
-        printer_putchar('(');
-        printer_putchar('n');
-        printer_putchar('i');
-        printer_putchar('l');
-        printer_putchar(')');
+        handleStr("(nil)");
     } else {
-        printer_putchar('0');
-        printer_putchar('x');
+        handleStr("0x");
         handleHex((unsigned long)pointer, false);
     }
 }
@@ -84,7 +79,7 @@ static void handleDecimal(int n) {
         number = (unsigned int)n;
     }
 
-    handleUnsigned((size_t)number);
+    handleUnsigned(number);
 }
 
 static void handleHexByte(uint32_t number) {

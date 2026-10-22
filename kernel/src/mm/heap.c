@@ -28,7 +28,6 @@ void heap_init(void) {
     heap.end = detect_end_of_available_memory(heap.start);
 }
 
-
 /** Allocate size bytes on heap.
  *
  * The behavior when size is zero is not defined and none of the provided

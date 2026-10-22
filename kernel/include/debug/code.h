@@ -8,7 +8,8 @@
 
 /** Get current value of stack pointer. */
 static inline uintptr_t debug_get_stack_pointer(void) {
-    return 0;
+    register uintptr_t sp __asm__("sp");
+    return sp;
 }
 
 void debug_dump_function(const char* name, uintptr_t address, size_t instruction_count);

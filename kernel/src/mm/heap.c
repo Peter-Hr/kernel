@@ -15,7 +15,7 @@ typedef struct {
 static heap_state_t heap;
 
 static uintptr_t detect_end_of_available_memory(uintptr_t start) {
-    uintptr_t current = start;
+    uintptr_t current = uintptr_align_up(start, 0x1000);
 
     while (current < 0x90000000) {
         volatile uint32_t* ptr = (volatile uint32_t*)current;

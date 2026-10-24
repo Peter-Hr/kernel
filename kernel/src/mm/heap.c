@@ -17,14 +17,13 @@ static heap_state_t heap;
 static uintptr_t detect_end_of_available_memory(uintptr_t start) {
     uintptr_t current = start;
 
-    // Krokujeme po 4 KiB (0x1000) až kým nenarazíme na limit 256 MB (0x90000000)
     while (current < 0x90000000) {
         volatile uint32_t* ptr = (volatile uint32_t*)current;
         
-        *ptr = 0xDEADBEEF; // Zapíšeme náhodnú testovaciu hodnotu
+        *ptr = 0xDEADBEEF; // TEST VALUE
         
         if (*ptr != 0xDEADBEEF) {
-            break; // Ak sa hodnota neuložila, pamäť tu končí
+            break; // IF NOT SAVED, OUT OF MEMORY
         }
         
         current += 0x1000;
@@ -38,7 +37,7 @@ static uintptr_t detect_end_of_available_memory(uintptr_t start) {
  * Called once during system boot.
  */
 void heap_init(void) {
-    heap.start = kernel_get_image_end();
+    heap.start = uintptr_align_up(kernel_get_image_end(), 8);
     heap.current = heap.start;
     heap.end = detect_end_of_available_memory(heap.start);
 }
@@ -56,9 +55,16 @@ void heap_init(void) {
  * @retval NULL Out of memory.
  */
 void* kmalloc(size_t size) {
-    size_t aligned_size = uintptr_align_up(size, 4);
+    uintptr_t current_aligned = uintptr_align_up(heap.current, 8);
 
-    if (heap.current + aligned_size > heap.end) {
+    size_t aligned_size = uintptr_align_up(size, 8);
+
+    if (aligned_size < size) {
+            return NULL; 
+    }
+
+    if (current_aligned + aligned_size < current_aligned || 
+        current_aligned + aligned_size > heap.end) {
         return NULL;
     }
 

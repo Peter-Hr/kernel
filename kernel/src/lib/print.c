@@ -242,7 +242,6 @@ void printk(const char* format, ...) {
                 printer_putchar('%');
                 break;
             default:
-                // printer_putchar('%'); // TODO: otazne ci sa ma vypisat to % ak za nim nic nie je
                 break;
             }
         } else {

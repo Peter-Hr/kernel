@@ -19,13 +19,13 @@ static uintptr_t detect_end_of_available_memory(uintptr_t start) {
 
     while (current < 0x90000000) {
         volatile uint32_t* ptr = (volatile uint32_t*)current;
-        
+
         *ptr = 0xDEADBEEF; // TEST VALUE
-        
+
         if (*ptr != 0xDEADBEEF) {
             break; // IF NOT SAVED, OUT OF MEMORY
         }
-        
+
         current += 0x1000;
     }
 
@@ -60,11 +60,10 @@ void* kmalloc(size_t size) {
     size_t aligned_size = uintptr_align_up(size, 8);
 
     if (aligned_size < size) {
-            return NULL; 
+        return NULL;
     }
 
-    if (current_aligned + aligned_size < current_aligned || 
-        current_aligned + aligned_size > heap.end) {
+    if (current_aligned + aligned_size < current_aligned || current_aligned + aligned_size > heap.end) {
         return NULL;
     }
 

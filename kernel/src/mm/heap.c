@@ -15,7 +15,22 @@ typedef struct {
 static heap_state_t heap;
 
 static uintptr_t detect_end_of_available_memory(uintptr_t start) {
-    return 0;
+    uintptr_t current = start;
+
+    // Krokujeme po 4 KiB (0x1000) až kým nenarazíme na limit 256 MB (0x90000000)
+    while (current < 0x90000000) {
+        volatile uint32_t* ptr = (volatile uint32_t*)current;
+        
+        *ptr = 0xDEADBEEF; // Zapíšeme náhodnú testovaciu hodnotu
+        
+        if (*ptr != 0xDEADBEEF) {
+            break; // Ak sa hodnota neuložila, pamäť tu končí
+        }
+        
+        current += 0x1000;
+    }
+
+    return current;
 }
 
 /** Heap initialization.

@@ -42,12 +42,20 @@ KERNEL_SOURCES = \
 	src/debug/padding.c \
 	src/lib/print.c \
 	src/lib/runtime.c \
-	src/mm/heap.c
+	src/proc/context.S \
+	src/proc/scheduler.c \
+	src/proc/thread.c
+
+ifeq ($(KERNEL_MEMORY_MANAGEMENT_IMPLEMENTATION),)
+KERNEL_MM_SOURCES = src/mm/heap.c
+else
+KERNEL_MM_SOURCES = $(KERNEL_MEMORY_MANAGEMENT_IMPLEMENTATION)
+endif
 
 BOOT_SOURCES = \
 	boot/loader.S
 
-KERNEL_OBJECTS := $(addsuffix .o,$(basename $(KERNEL_SOURCES) $(KERNEL_TEST_SOURCES)))
+KERNEL_OBJECTS := $(addsuffix .o,$(basename $(KERNEL_SOURCES) $(KERNEL_TEST_SOURCES) $(KERNEL_MM_SOURCES)))
 KERNEL_LINKER_SCRIPT = $(SRC_BASE)kernel.lds
 KERNEL_RAW = kernel.raw
 KERNEL_MAP = kernel.map

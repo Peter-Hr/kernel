@@ -1,0 +1,14 @@
+# Base thread tests (required)
+kernel thread/basic
+kernel thread/running
+kernel thread/names
+kernel thread/suspend
+kernel thread/finish
+kernel thread/stack
+kernel thread/stress
+kernel thread/exhaust
+kernel thread/kill
+kernel thread/selfkill
+kernel thread/fairness
+kernel thread/params
+kernel thread/retvals

@@ -5,6 +5,7 @@
 #define _KTEST_H
 
 #include <debug.h>
+#include <errno.h>
 #include <lib/print.h>
 
 /*
@@ -48,6 +49,11 @@
     ktest_assert(((value) >= (lower)) && ((value) <= (upper)), \
             "%s: " #value "=%d not in [" #lower "=%d, " #upper "=%d] range", \
             msg, value, lower, upper)
+
+/** Kernel test asserting for error codes. */
+#define ktest_assert_errno(value, last_operation_name) \
+    ktest_assert((value) == EOK, "%s unexpectedly failed with %d (%s)", \
+            last_operation_name, (value), errno_as_str(value))
 
 /** Kernel test signature.
  *

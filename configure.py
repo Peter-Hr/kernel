@@ -14,6 +14,13 @@ KERNEL_TEST_EXTRAS = {
     'heap/overhead': {
         'CFLAGS': [ '-DKERNEL_TEST_PROBE_MEMORY_MAINMEM_SIZE_KB={mainmem_size}']
     },
+    'thread/leaks': {
+        'mm_implementation': 'tests/leak.c',
+        'CFLAGS': [
+            # Use only for debugging, not for bypassing leak tests
+            '-DKERNEL_HEAP_ALLOCATOR_MINIMAL_IMPLEMENTATION=1',
+        ]
+    },
 }
 
 # Last one takes precedence

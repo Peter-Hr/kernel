@@ -27,6 +27,7 @@ stages:
   - Style
   - M01
   - M02
+  - M03
 
 # Check C style of the code
 check-cstyle:
@@ -113,4 +114,20 @@ heap-coalesce:
   allow_failure: false
   script:
     - ./tools/ci.sh suites/m02-heap-coalesce.txt
+
+# M03: base-m03 (Base thread tests (required))
+base-m03:
+  stage: M03
+  needs: []
+  allow_failure: false
+  script:
+    - ./tools/ci.sh suites/m03-base.txt
+
+# M03: thread-leaks (Thread functions do no leak memory (optional))
+thread-leaks:
+  stage: M03
+  needs: [base-m03]
+  allow_failure: false
+  script:
+    - ./tools/ci.sh suites/m03-thread-leaks.txt
 

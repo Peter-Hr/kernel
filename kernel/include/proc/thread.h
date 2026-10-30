@@ -4,8 +4,8 @@
 #ifndef _PROC_THREAD_H
 #define _PROC_THREAD_H
 
-#include <errno.h>
 #include <adt/list.h>
+#include <errno.h>
 #include <proc/context.h>
 #include <types.h>
 

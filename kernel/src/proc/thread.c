@@ -23,7 +23,7 @@ static void thread_set_name(thread_t* thread, const char* name) {
     thread->name[i] = '\0';
 }
 
-thread_t* current_thread = NULL;
+static thread_t* current_thread = NULL;
 
 /** Initialize support for threading.
  *
@@ -39,7 +39,6 @@ void threads_init(void) {
 
     current_thread->entry_func = NULL;
     current_thread->stack_memory = NULL;
-    current_thread->stack_size = 0;
 
     current_thread->state = THREAD_STATE_RUNNING;
     current_thread->retval = NULL;
@@ -99,7 +98,6 @@ errno_t thread_create(thread_t** thread_out, thread_entry_func_t entry, void* da
         kfree(new_thread); // Ak zlyhá zásobník, musíme vrátiť aj štruktúru, inak máme memory leak
         return ENOMEM;
     }
-    new_thread->stack_size = THREAD_STACK_SIZE;
 
     // 3. Inicializácia premenných
     thread_set_name(new_thread, name);

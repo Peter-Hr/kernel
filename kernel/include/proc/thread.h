@@ -41,7 +41,6 @@ struct thread {
 
     // --- heap ---
     void* stack_memory; // najmenšia adresa alkovana
-    size_t stack_size; // velkost alokovanej pamata
 
     thread_state_t state; // aktaulny stav threadu
     void* retval; // návratová hodnota funkcie entry_funck(data)

@@ -5,6 +5,7 @@
 #define _PROC_THREAD_H
 
 #include <errno.h>
+#include <proc/context.h>
 #include <types.h>
 
 /** Thread stack size.
@@ -23,9 +24,32 @@ typedef void* (*thread_entry_func_t)(void*);
 /** Information about any existing thread. */
 typedef struct thread thread_t;
 
+typedef enum {
+    THREAD_STATE_READY,
+    THREAD_STATE_RUNNING,
+    THREAD_STATE_DEAD,
+    THREAD_STATE_SUSPENDED
+} thread_state_t;
+
 struct thread {
     char name[THREAD_NAME_MAX_LENGTH + 1];
     thread_entry_func_t entry_func;
+    void* data;
+
+    context_t context;
+
+    // --- heap ---
+    void* stack_memory; // najmenšia adresa alkovana
+    size_t stack_size; // velkost alokovanej pamata
+
+    thread_state_t state; // aktaulny stav threadu
+    void* retval; // návratová hodnota funkcie entry_funck(data)
+
+    struct thread* next_ready; // pointer na dalsi thread co sa moze vykonat
+    struct thread* next_global; // pointer na dlasi thread co existuje v systeme
+
+    bool is_joined; // True, ak už nejaký thread zavolal thread_join na tento thread
+    bool is_killed; // True, ak bol thread zabitý
 };
 
 void threads_init(void);

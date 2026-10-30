@@ -6,6 +6,8 @@
 
 #include <proc/thread.h>
 
+bool scheduler_is_empty(void);
+
 void scheduler_init(void);
 void scheduler_add_ready_thread(thread_t* id);
 void scheduler_remove_thread(thread_t* id);

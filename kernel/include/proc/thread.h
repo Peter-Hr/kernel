@@ -5,6 +5,7 @@
 #define _PROC_THREAD_H
 
 #include <errno.h>
+#include <adt/list.h>
 #include <proc/context.h>
 #include <types.h>
 
@@ -45,8 +46,7 @@ struct thread {
     thread_state_t state; // aktaulny stav threadu
     void* retval; // návratová hodnota funkcie entry_funck(data)
 
-    struct thread* next_ready; // pointer na dalsi thread co sa moze vykonat
-    struct thread* next_global; // pointer na dlasi thread co existuje v systeme
+    link_t ready_link;
 
     bool is_joined; // True, ak už nejaký thread zavolal thread_join na tento thread
     bool is_killed; // True, ak bol thread zabitý

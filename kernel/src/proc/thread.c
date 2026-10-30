@@ -2,6 +2,7 @@
 // Copyright 2019 Charles University
 
 #include <abi.h>
+#include <adt/align.h>
 #include <debug.h>
 #include <errno.h>
 #include <mm/heap.h>
@@ -21,8 +22,6 @@ static void thread_set_name(thread_t* thread, const char* name) {
     }
     thread->name[i] = '\0';
 }
-
-struct thread* all_threads_head;
 
 thread_t* current_thread = NULL;
 
@@ -45,10 +44,7 @@ void threads_init(void) {
     current_thread->state = THREAD_STATE_RUNNING;
     current_thread->retval = NULL;
 
-    current_thread->next_ready = NULL; // Do plánovača nepôjde
-    current_thread->next_global = NULL;
-
-    all_threads_head = current_thread;
+    link_init(&current_thread->ready_link);
 }
 
 static void thread_start_wrapper(void) {
@@ -64,8 +60,8 @@ static void thread_start_wrapper(void) {
     // Týmto odpovedáme na otázku zo zadania: "Who calls thread_finish()?"
     thread_finish(retval);
 
-    // Sem by sa už procesor nikdy nemal dostať, pretože thread_finish() urobí
-    // thread_yield() a prepne na iný thread.
+    // Sem by sa už procesor nikdy nemal dostať, pretože thread_finish()
+    // prepne na iný thread.
     panic("Thread returned from thread_finish!");
 }
 
@@ -82,7 +78,7 @@ static void thread_start_wrapper(void) {
  * @param flags Flags (unused).
  * @param name Thread name (for debugging purposes).
  * @return Error code.
- * @retval EOK Thread was created and started (added to ready queue).
+ * @retval EOK Thread was created and added to the ready queue.
  * @retval ENOMEM Not enough memory to complete the operation.
  * @retval EINVAL Invalid flags (unused).
  */
@@ -114,19 +110,16 @@ errno_t thread_create(thread_t** thread_out, thread_entry_func_t entry, void* da
     new_thread->is_joined = false;
     new_thread->is_killed = false;
 
-    new_thread->next_global = all_threads_head;
-    all_threads_head = new_thread;
+    link_init(&new_thread->ready_link);
 
-    // 4. Nastavenie vrcholu zásobníka (Stack Pointer)
+    // 4. Nastavenie vrcholu zásobníka (Stack Pointer), zarovnaného podľa ABI
     uintptr_t stack_top = (uintptr_t)new_thread->stack_memory + THREAD_STACK_SIZE;
-    stack_top = stack_top & ~((uintptr_t)ABI_STACK_ALIGNMENT - 1);
-    new_thread->context.sp = stack_top;
+    new_thread->context.sp = uintptr_align_down(stack_top, ABI_STACK_ALIGNMENT);
 
     // 5. Príprava kontextu (Return Address)
     new_thread->context.ra = (unative_t)thread_start_wrapper;
 
-    // 6. Zaradenie do plánovača (Run Queue)
-    new_thread->next_ready = NULL;
+    // 6. Zaradenie do plánovača (Ready Queue)
     scheduler_add_ready_thread(new_thread);
 
     // 7. Vrátenie výsledku
@@ -200,7 +193,7 @@ void thread_finish(void* retval) {
 
     current_thread->state = THREAD_STATE_DEAD;
 
-    // dalsi thread sa moze spustit
+    // Ďalší thread sa môže spustiť
     scheduler_schedule_next();
 
     // ak funkcia pokracuje tak je zle!
@@ -326,22 +319,6 @@ errno_t thread_join(thread_t* thread, void** retval) {
     // Poznačíme si výsledok, kým ešte štruktúra existuje
     errno_t return_status = thread->is_killed ? EKILLED : EOK;
 
-    // Najprv musíme thread bezpečne vymazať z nášho globálneho zoznamu
-    thread_t* prev = NULL;
-    thread_t* curr = all_threads_head;
-    while (curr != NULL) {
-        if (curr == thread) {
-            if (prev == NULL) { // Mažeme prvý prvok
-                all_threads_head = curr->next_global;
-            } else { // Mažeme prvok zo stredu alebo konca
-                prev->next_global = curr->next_global;
-            }
-            break;
-        }
-        prev = curr;
-        curr = curr->next_global;
-    }
-
     // Uvoľnenie zásobníka a samotnej štruktúry
     if (thread->stack_memory != NULL) {
         kfree(thread->stack_memory);
@@ -421,7 +398,7 @@ errno_t thread_kill(thread_t* thread) {
     } else {
         // pamať si uvolní join
         thread->state = THREAD_STATE_DEAD;
-        scheduler_remove_thread(thread); // Odstránime ho z plánovača, aby sa už nikdy nespustil
+        scheduler_remove_thread(thread); // Odstránime ho z ready queue, aby sa už nespustil
     }
 
     return EOK;

@@ -6,7 +6,7 @@
 
 static void print_hex_padded(uint32_t val) {
     const char hex_chars[] = "0123456789abcdef";
-    
+
     for (int shift = 28; shift >= 0; shift -= 4) {
         // Vypočítame index (0 až 15) a priamo vypíšeme znak z poľa
         printk("%c", hex_chars[(val >> shift) & 0xF]);
@@ -33,14 +33,14 @@ void debug_dump_function(const char* name, uintptr_t address, size_t instruction
 
     uint32_t* instructions = (uint32_t*)address;
 
-    //každá inštrukcia
+    // každá inštrukcia
     for (size_t i = 0; i < instruction_count; i++) {
         uintptr_t current_address = address + (i * 4);
-        
+
         print_hex_padded((uint32_t)current_address);
-        
+
         printk(":        ");
-        
+
         print_hex_padded(instructions[i]);
         printk("\n");
     }

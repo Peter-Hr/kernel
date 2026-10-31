@@ -182,12 +182,11 @@ void printk(const char* format, ...) {
                     if (count == 0) {
                         handleStr("[empty]");
                         break;
-                    } else {
-                        printer_putchar('[');
-                        handleUnsigned(count);
-                        printer_putchar(':');
-                        printer_putchar(' ');
                     }
+                    printer_putchar('[');
+                    handleUnsigned(count);
+                    printer_putchar(':');
+                    printer_putchar(' ');
 
                     link = list->head.next;
                     while (link != &list->head) {
@@ -224,6 +223,20 @@ void printk(const char* format, ...) {
 
                     printer_putchar(']');
 
+                    break;
+                }
+
+                if (*itcopy == 'A') {
+                    it = itcopy;
+                    void* ptr = va_arg(args, void*);
+                    if (ptr == NULL) {
+                        handleStr("(nil)");
+                    } else {
+                        handlePointer(ptr);
+                        printer_putchar('[');
+                        printer_putchar('?');
+                        printer_putchar(']');
+                    }
                     break;
                 }
 

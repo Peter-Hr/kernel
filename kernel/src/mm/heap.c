@@ -5,6 +5,7 @@
 #include <drivers/printer.h>
 #include <mm/heap.h>
 #include <mm/self.h>
+#include <lib/print.h>
 
 typedef struct {
     uintptr_t start;
@@ -13,6 +14,7 @@ typedef struct {
 } heap_state_t;
 
 static heap_state_t heap;
+static list_t blocks;
 
 static uintptr_t detect_end_of_available_memory(uintptr_t start) {
     uintptr_t current = uintptr_align_up(start, 0x1000);
@@ -38,8 +40,19 @@ static uintptr_t detect_end_of_available_memory(uintptr_t start) {
  */
 void heap_init(void) {
     heap.start = uintptr_align_up(kernel_get_image_end(), 8);
-    heap.current = heap.start;
     heap.end = detect_end_of_available_memory(heap.start);
+
+    if (HEAP_USE_BUMP) {
+        heap.current = heap.start;
+    } else {
+        heap_block_t* first = (heap_block_t*)heap.start;
+        first->used = false;
+        first->size = heap.end - heap.start - sizeof(heap_block_t);
+
+        list_init(&blocks);
+        list_append(&blocks, &first->link);
+        printk("heap: 0x%x-0x%x, first block size %u\n", heap.start, heap.end, first->size);
+    }
 }
 
 static void* bump_kmalloc(size_t size) {
@@ -60,7 +73,40 @@ static void* bump_kmalloc(size_t size) {
     return result;
 }
 
+static void link_insert_after(link_t* x, link_t* new_link) {
+    link_t* y = x->next;
+
+    new_link->prev = x;
+    new_link->next = y;
+    y->prev = new_link;
+    x->next = new_link;
+}
+
 static void* real_kmalloc(size_t size) {
+    size_t aligned_size = uintptr_align_up(size, 8);
+
+    if (aligned_size < size) {
+        return NULL;
+    }
+
+    list_foreach(blocks, heap_block_t, link, hdr) {
+        if (hdr->used || aligned_size > hdr->size) {
+            continue;
+        }
+        size_t leftover = hdr->size - aligned_size;
+
+        if (leftover < 24) {
+            hdr->used = true;
+            return hdr+1;
+        } else {
+            hdr->size = leftover - 16;
+            heap_block_t* new_hdr = (heap_block_t*)((uint8_t*)hdr + 16 + hdr->size);
+            new_hdr->used = true;
+            new_hdr->size = aligned_size;
+            link_insert_after(&hdr->link, &new_hdr->link);
+            return new_hdr+1;
+        }
+    }
     return NULL;
 }
 

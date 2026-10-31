@@ -5,6 +5,18 @@
 #define _MM_HEAP_H
 
 #include <types.h>
+#include <adt/list.h>
+
+
+/** Header placed right before every heap block. */
+typedef struct {
+    link_t link;  // all blocks, address-ordered
+    size_t size;  // payload size (without header), multiple of 8
+    bool used;
+} heap_block_t;
+
+_CHECK_TYPE_SIZE(heap_block_t, 16);
+
 
 /** Allocator selection
  *

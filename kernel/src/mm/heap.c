@@ -3,9 +3,9 @@
 
 #include <adt/align.h>
 #include <drivers/printer.h>
+#include <lib/print.h>
 #include <mm/heap.h>
 #include <mm/self.h>
-#include <lib/print.h>
 
 typedef struct {
     uintptr_t start;
@@ -97,14 +97,14 @@ static void* real_kmalloc(size_t size) {
 
         if (leftover < 24) {
             hdr->used = true;
-            return hdr+1;
+            return hdr + 1;
         } else {
             hdr->size = leftover - 16;
             heap_block_t* new_hdr = (heap_block_t*)((uint8_t*)hdr + 16 + hdr->size);
             new_hdr->used = true;
             new_hdr->size = aligned_size;
             link_insert_after(&hdr->link, &new_hdr->link);
-            return new_hdr+1;
+            return new_hdr + 1;
         }
     }
     return NULL;
@@ -133,8 +133,26 @@ static void bump_kfree(void* ptr) {
 }
 
 static void real_kfree(void* ptr) {
-    // heap.current = heap.start;
-    return;
+    heap_block_t* hdr = (heap_block_t*)ptr - 1; // header
+    hdr->used = false;
+
+    link_t* right_link = hdr->link.next;
+    if (right_link != &blocks.head) {
+        heap_block_t* right = list_item(right_link, heap_block_t, link);
+        if (!right->used) {
+            hdr->size += 16 + right->size; // hdr eats right
+            list_remove(&right->link); // right gone
+        }
+    }
+
+    link_t* left_link = hdr->link.prev;
+    if (left_link != &blocks.head) {
+        heap_block_t* left = list_item(left_link, heap_block_t, link);
+        if (!left->used) {
+            left->size += 16 + hdr->size; // left eats hdr
+            list_remove(&hdr->link); // hdr gone
+        }
+    }
 }
 
 /** Free memory previously allocated by kmalloc.
@@ -151,7 +169,6 @@ static void real_kfree(void* ptr) {
 void kfree(void* ptr) {
     if (HEAP_USE_BUMP) {
         bump_kfree(ptr);
-    } else {
-        real_kfree(ptr);
     }
+    return real_kfree(ptr);
 }

@@ -6,6 +6,8 @@
 #include <drivers/printer.h>
 #include <lib/print.h>
 #include <lib/stdarg.h>
+#include <mm/heap.h>
+#include <proc/thread.h>
 #include <types.h>
 
 static void handleStr(const char* str) {
@@ -103,6 +105,55 @@ static void handleHexByte(uint32_t number) {
     }
 }
 
+#if HEAP_HAS_BLOCK_HEADERS
+static void print_heap_neighbour(const char* label, link_t* link) {
+    handleStr(label);
+    if (!heap_contains((uintptr_t)link)) {
+        handleStr("none");
+        return;
+    }
+    heap_block_t* block = list_item(link, heap_block_t, link);
+    handleUnsigned(block->size);
+    handleStr(block->used ? " used" : " free");
+}
+#endif
+
+static void print_heap_block(void* ptr) {
+    handlePointer(ptr);
+#if HEAP_HAS_BLOCK_HEADERS
+    if (!heap_contains((uintptr_t)ptr - sizeof(heap_block_t))) {
+        handleStr("[not heap]");
+        return;
+    }
+    heap_block_t* hdr = (heap_block_t*)ptr - 1;
+    printer_putchar('[');
+    handleUnsigned(hdr->size);
+    handleStr(hdr->used ? " used" : " free");
+    print_heap_neighbour(" | prev ", hdr->link.prev);
+    print_heap_neighbour(" | next ", hdr->link.next);
+    printer_putchar(']');
+#endif
+}
+
+static void print_thread(thread_t* t) {
+    printer_putchar('[');
+    handleStr(t->name);
+    printer_putchar(' ');
+    if (t->state == THREAD_STATE_SUSPENDED) {
+        handleStr("(suspended)");
+    }
+    if (t->state == THREAD_STATE_RUNNING) {
+        handleStr("(running)");
+    }
+    if (t->state == THREAD_STATE_DEAD) {
+        handleStr("(dead)");
+    }
+    if (t->state == THREAD_STATE_READY) {
+        handleStr("(ready)");
+    }
+    printer_putchar(']');
+}
+
 /** Prints given formatted string to console.
  *
  * @param format printf-style formatting string.
@@ -168,6 +219,10 @@ void printk(const char* format, ...) {
                     it = itcopy;
 
                     list_t* list = va_arg(args, list_t*);
+                    if (list == NULL) {
+                        handleStr("(nil)");
+                        break;
+                    }
                     link_t* link = list->head.next;
 
                     unsigned int count = 0;
@@ -207,6 +262,10 @@ void printk(const char* format, ...) {
                     it = itcopy;
 
                     uintptr_t address = va_arg(args, uintptr_t);
+                    if (address == 0) {
+                        handleStr("(nil)");
+                        break;
+                    }
                     uint32_t* instructions = (uint32_t*)address;
                     size_t numberOfInstuctions = 4;
 
@@ -232,23 +291,24 @@ void printk(const char* format, ...) {
                     if (ptr == NULL) {
                         handleStr("(nil)");
                     } else {
-                        handlePointer(ptr);
-                        printer_putchar('[');
-                        printer_putchar('?');
-                        printer_putchar(']');
+                        print_heap_block(ptr);
+                    }
+                    break;
+                }
+
+                if (*itcopy == 'T') {
+                    it = itcopy;
+                    thread_t* thread = va_arg(args, void*);
+                    if (thread == NULL) {
+                        handleStr("(nil)");
+                    } else {
+                        print_thread(thread);
                     }
                     break;
                 }
 
                 void* ptr = va_arg(args, void*);
-
                 handlePointer(ptr);
-
-                if (*itcopy != '\0') {
-                    printer_putchar(*itcopy);
-                    it = itcopy;
-                }
-
                 break;
             }
             case '%':

@@ -172,3 +172,8 @@ void kfree(void* ptr) {
     }
     return real_kfree(ptr);
 }
+
+/** is address inside the heap? */
+bool heap_contains(uintptr_t addr) {
+    return addr >= heap.start && addr < heap.end;
+}

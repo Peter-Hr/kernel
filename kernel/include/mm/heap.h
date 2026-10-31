@@ -16,6 +16,8 @@ typedef struct {
 
 _CHECK_TYPE_SIZE(heap_block_t, 16);
 
+bool heap_contains(uintptr_t addr); // getters prototype
+
 /** Allocator selection
  *
  * 1 = bump-pointer allocator (kfree does nothing)
